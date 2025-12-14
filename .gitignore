@@ -1,0 +1,153 @@
+# ============================================================================
+# AGENTGUARD .gitignore
+# ============================================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+.ENV
+.env.local
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Environment Variables
+.env
+.env.production
+.env.staging
+.env.local
+*.env
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+agentguard.db
+telemetry.db
+/data/
+
+# Logs
+*.log
+logs/
+*.log.*
+agentguard.log
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+*.cover
+.cache
+nosetests.xml
+coverage.xml
+*.coveragerc
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Package Manager
+pip-log.txt
+pip-delete-this-directory.txt
+poetry.lock
+Pipfile.lock
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup Files
+*.bak
+*.backup
+*.swp
+*.tmp
+
+# Secrets and Keys
+*.pem
+*.key
+*.crt
+*.cert
+secrets/
+credentials/
+api_keys.txt
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+
+# Configuration (keep examples, ignore actual)
+# .env.example is tracked
+# .env is NOT tracked
+
+# Data (keep structure, ignore content)
+/mnt/user-data/uploads/*
+!/mnt/user-data/uploads/.gitkeep
+
+# Build Artifacts
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# CI/CD
+.github/workflows/secrets/
+
+# Local Development
+local/
+scratch/
+experiments/
+
+# Documentation Build
+docs/_build/
+site/
+
+# Monitoring & Metrics
+prometheus_data/
+grafana_data/
+
+# Misc
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/

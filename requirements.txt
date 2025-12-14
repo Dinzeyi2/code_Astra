@@ -1,0 +1,22 @@
+# ============================================================================
+# AGENTGUARD API - PYTHON DEPENDENCIES
+# ============================================================================
+
+# Web framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Configuration
+PyYAML==6.0.1
+
+# HTTP client (for examples)
+requests==2.31.0
+
+# Rate limiting
+Flask-Limiter==3.5.0
+
+# Production WSGI server
+gunicorn==21.2.0
+
+# Optional: Better logging
+python-json-logger==2.0.7
