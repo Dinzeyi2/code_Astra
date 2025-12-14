@@ -30,10 +30,9 @@ services:
     # Environment variables
     environment:
       - AGENTGUARD_ENV=${AGENTGUARD_ENV:-production}
-      - AGENTGUARD_API_KEY=${AGENTGUARD_API_KEY}
+      - AGENTGUARD_ADMIN_KEY=${AGENTGUARD_ADMIN_KEY}
       - AGENTGUARD_PORT=5000
       - AGENTGUARD_DB_PATH=/app/data/agentguard.db
-      - AGENTGUARD_TELEMETRY_DB_PATH=/app/data/telemetry.db
       - AGENTGUARD_LOG_LEVEL=${AGENTGUARD_LOG_LEVEL:-INFO}
     
     # Ports
