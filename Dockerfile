@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY API/agent_safety_stack_v3_enterprise.py .
-COPY API/agentguard_api_complete.py .
+COPY API/agentguard_api.py .
 COPY config/agentguard_config.yaml .
 
 # Create data directory for SQLite
@@ -57,5 +57,6 @@ EXPOSE 5000
 
 # Run the API server
 CMD ["python", "agentguard_api_complete.py"]
+
 
 
