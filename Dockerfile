@@ -10,7 +10,7 @@
 #
 # Run:
 #   docker run -p 5000:5000 \
-#     -e AGENTGUARD_API_KEY=your-secret-key \
+#     -e AGENTGUARD_ADMIN_KEY=your-secret-admin-key \
 #     -e AGENTGUARD_ENV=production \
 #     agentguard-api:latest
 #
@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY agent_safety_stack_v3_enterprise.py .
-COPY API/agentguard_api.py API/ .
+COPY agentguard_api_complete.py .
 COPY agentguard_config.yaml .
 
 # Create data directory for SQLite
@@ -47,7 +47,6 @@ USER agentguard
 ENV AGENTGUARD_ENV=production
 ENV AGENTGUARD_PORT=5000
 ENV AGENTGUARD_DB_PATH=/app/data/agentguard.db
-ENV AGENTGUARD_TELEMETRY_DB_PATH=/app/data/telemetry.db
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
@@ -57,6 +56,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 EXPOSE 5000
 
 # Run the API server
-
-CMD ["python", "API/agentguard_api.py"]
-
+CMD ["python", "agentguard_api_complete.py"]
