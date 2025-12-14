@@ -57,4 +57,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 EXPOSE 5000
 
 # Run the API server
-CMD ["python", "api_server.py"]
+
+CMD ["python", "API/agentguard_api.py"]
