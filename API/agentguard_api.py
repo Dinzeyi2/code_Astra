@@ -404,7 +404,7 @@ try:
         AgentSafetyStack_v3_Enterprise,
         Decision,
         EnterpriseStackResult as StackResult,
-        LayerResult
+        EnterpriseLayerResult as LayerResult
     )
     FULL_STACK_AVAILABLE = True
     logger.info("✅ FULL 6-LAYER ENTERPRISE STACK LOADED")
