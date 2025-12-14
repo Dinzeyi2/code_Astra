@@ -1,0 +1,614 @@
+openapi: 3.0.0
+
+info:
+  title: AgentGuard API
+  version: 3.0.0
+  description: |
+    AgentGuard enforces explicit safety guarantees across agent code before execution, 
+    during execution, and across time, without modifying agent logic.
+    
+    ## Product Contract
+    
+    **GUARANTEES:**
+    - Enforces defined safety invariants (configurable policies)
+    - Blocks unsafe execution paths (deterministic enforcement)
+    - Maintains audit trail (7-year compliance retention)
+    - Provides observability (metrics, logs, dashboards)
+    
+    **NOT GUARANTEED:**
+    - Does NOT prevent all bugs (only policy violations)
+    - Does NOT guarantee semantic correctness (requires testing)
+    
+    **COVERAGE:** ~85-95% of common agent safety issues
+    
+  contact:
+    name: AgentGuard Support
+    email: support@agentguard.com
+    url: https://agentguard.com/support
+  
+  license:
+    name: Commercial
+    url: https://agentguard.com/license
+
+servers:
+  - url: https://api.agentguard.com/v1
+    description: Production
+  - url: https://staging-api.agentguard.com/v1
+    description: Staging
+  - url: http://localhost:5000/api/v1
+    description: Local development
+
+paths:
+  
+  /health:
+    get:
+      summary: Health Check
+      description: Check if the service is healthy
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  version:
+                    type: string
+                    example: "3.0"
+                  uptime:
+                    type: number
+                  features:
+                    type: object
+  
+  /contract:
+    get:
+      summary: Get Product Contract
+      description: Get the full product contract and guarantees
+      operationId: getContract
+      tags:
+        - System
+      responses:
+        '200':
+          description: Product contract
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contract:
+                    type: string
+                  version:
+                    type: string
+  
+  /config:
+    get:
+      summary: Get Configuration
+      description: Get current configuration
+      operationId: getConfig
+      tags:
+        - System
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current configuration
+          content:
+            application/json:
+              schema:
+                type: object
+  
+  /analyze:
+    post:
+      summary: Analyze Code
+      description: |
+        Static analysis only - does not enforce.
+        Returns what WOULD happen without actually blocking.
+        Use this for testing and validation.
+      operationId: analyzeCode
+      tags:
+        - Enforcement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeRequest'
+      responses:
+        '200':
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /enforce:
+    post:
+      summary: Enforce Safety Checks
+      description: |
+        Full enforcement check - this is the main API endpoint.
+        Runs code through all 6 layers and returns decision.
+        Records telemetry and audit logs.
+      operationId: enforceCode
+      tags:
+        - Enforcement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnforceRequest'
+            examples:
+              basic:
+                summary: Basic enforcement
+                value:
+                  agent_id: "agent-123"
+                  code: "account.balance -= 100"
+                  context: {}
+              
+              financial:
+                summary: Financial operation
+                value:
+                  agent_id: "financial-agent-001"
+                  code: "transfer_money(from_account, to_account, 150000)"
+                  context:
+                    domain: financial
+                    amount: 150000
+                    source_auth: true
+              
+              healthcare:
+                summary: Healthcare operation (HIPAA)
+                value:
+                  agent_id: "healthcare-agent-001"
+                  code: "patient_record = get_patient_data(patient_id)"
+                  context:
+                    domain: healthcare
+                    hipaa_consent: true
+                    encrypted_storage: true
+      
+      responses:
+        '200':
+          description: Enforcement result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnforceResponse'
+              examples:
+                allowed:
+                  summary: Code allowed
+                  value:
+                    decision: ALLOW
+                    blocked_by: null
+                    violations: []
+                    latency_ms: 1.23
+                    layer_results: []
+                    audit_id: "abc123"
+                
+                blocked:
+                  summary: Code blocked
+                  value:
+                    decision: BLOCK
+                    blocked_by: "Layer 2: Semantic Guard"
+                    violations:
+                      - "CRITICAL: Balance subtraction requires authorization"
+                    latency_ms: 2.45
+                    layer_results: []
+                    audit_id: "def456"
+                
+                requires_approval:
+                  summary: Requires approval
+                  value:
+                    decision: REQUIRES_APPROVAL
+                    blocked_by: null
+                    violations: []
+                    latency_ms: 1.89
+                    requires_approval: true
+                    approval_id: "approval-789"
+                    approval_level: "CTO"
+                    audit_id: "ghi789"
+        
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /execute:
+    post:
+      summary: Execute with Enforcement
+      description: |
+        Execute code with enforcement (premium feature).
+        Only executes if all layers pass.
+        Uses sandbox for execution.
+      operationId: executeCode
+      tags:
+        - Enforcement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteRequest'
+      responses:
+        '200':
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecuteResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /metrics:
+    get:
+      summary: Get Metrics
+      description: Get Prometheus-compatible metrics
+      operationId: getMetrics
+      tags:
+        - Observability
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Prometheus metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+  
+  /dashboard:
+    get:
+      summary: Get Dashboard Data
+      description: Get data for dashboard visualization
+      operationId: getDashboard
+      tags:
+        - Observability
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardData'
+  
+  /approval/{approval_id}/approve:
+    post:
+      summary: Approve Request
+      description: Approve a pending approval request
+      operationId: approveRequest
+      tags:
+        - Approval
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: approval_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - approver
+              properties:
+                approver:
+                  type: string
+                  example: "cto@company.com"
+                conditions:
+                  type: string
+                  example: "Approved for maintenance window"
+      responses:
+        '200':
+          description: Approval successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: approved
+                  approval_id:
+                    type: string
+                  approver:
+                    type: string
+        '404':
+          description: Approval not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /approval/{approval_id}/reject:
+    post:
+      summary: Reject Request
+      description: Reject a pending approval request
+      operationId: rejectRequest
+      tags:
+        - Approval
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: approval_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - approver
+                - reason
+              properties:
+                approver:
+                  type: string
+                  example: "cto@company.com"
+                reason:
+                  type: string
+                  example: "Too risky for production"
+      responses:
+        '200':
+          description: Rejection successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: rejected
+                  approval_id:
+                    type: string
+                  approver:
+                    type: string
+                  reason:
+                    type: string
+
+components:
+  
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+  
+  schemas:
+    
+    AnalyzeRequest:
+      type: object
+      required:
+        - agent_id
+        - code
+      properties:
+        agent_id:
+          type: string
+          description: Unique agent identifier
+          example: "agent-123"
+        code:
+          type: string
+          description: Code to analyze
+          example: "account.balance -= 100"
+        context:
+          type: object
+          description: Additional context for analysis
+          additionalProperties: true
+    
+    AnalyzeResponse:
+      type: object
+      properties:
+        would_block:
+          type: boolean
+          description: Whether code would be blocked
+        blocked_by:
+          type: string
+          nullable: true
+          description: Which layer would block
+        violations:
+          type: array
+          items:
+            type: string
+        layer_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerResult'
+    
+    EnforceRequest:
+      type: object
+      required:
+        - agent_id
+        - code
+      properties:
+        agent_id:
+          type: string
+          description: Unique agent identifier
+          example: "agent-123"
+        session_id:
+          type: string
+          description: Session identifier for tracking
+          example: "session-456"
+        language:
+          type: string
+          description: Programming language
+          enum: [python, javascript, typescript]
+          default: python
+        code:
+          type: string
+          description: Code to enforce
+          example: "account.balance -= 100"
+        context:
+          type: object
+          description: Additional context for enforcement
+          additionalProperties: true
+          example:
+            has_auth_check: false
+            environment: production
+            domain: financial
+    
+    EnforceResponse:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum: [ALLOW, BLOCK, REQUIRES_APPROVAL]
+          description: Final enforcement decision
+        blocked_by:
+          type: string
+          nullable: true
+          description: Which layer blocked (if blocked)
+        violations:
+          type: array
+          items:
+            type: string
+          description: List of violations
+        latency_ms:
+          type: number
+          description: Total latency in milliseconds
+        layer_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerResult'
+        audit_id:
+          type: string
+          description: Unique audit log identifier
+        requires_approval:
+          type: boolean
+          description: Whether approval is required
+        approval_id:
+          type: string
+          nullable: true
+          description: Approval request ID (if requires approval)
+        approval_level:
+          type: string
+          nullable: true
+          enum: [MANAGER, DIRECTOR, VP, CTO]
+          description: Required approval level
+        compliance_status:
+          type: object
+          additionalProperties: true
+          description: Compliance check results
+    
+    ExecuteRequest:
+      type: object
+      required:
+        - agent_id
+        - code
+      properties:
+        agent_id:
+          type: string
+        code:
+          type: string
+        context:
+          type: object
+          additionalProperties: true
+    
+    ExecuteResponse:
+      type: object
+      properties:
+        executed:
+          type: boolean
+          description: Whether code was executed
+        decision:
+          type: string
+        output:
+          type: string
+          nullable: true
+          description: Execution output (if executed)
+        error:
+          type: string
+          nullable: true
+          description: Error message (if blocked or failed)
+    
+    LayerResult:
+      type: object
+      properties:
+        layer:
+          type: string
+          description: Layer name
+          example: "Layer 2: Semantic Guard"
+        decision:
+          type: string
+          enum: [ALLOW, BLOCK, CONSTRAIN, REQUIRES_APPROVAL]
+        violations:
+          type: array
+          items:
+            type: string
+        latency_ms:
+          type: number
+          description: Layer latency in milliseconds
+    
+    DashboardData:
+      type: object
+      properties:
+        recent_decisions:
+          type: array
+          items:
+            type: object
+        violations_by_severity:
+          type: object
+          additionalProperties:
+            type: integer
+        metrics:
+          type: object
+    
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          additionalProperties: true
+
+tags:
+  - name: System
+    description: System endpoints (health, config)
+  - name: Enforcement
+    description: Code enforcement endpoints
+  - name: Observability
+    description: Metrics and monitoring
+  - name: Approval
+    description: Approval workflow endpoints
