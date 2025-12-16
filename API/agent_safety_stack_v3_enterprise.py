@@ -4,8 +4,8 @@ AGENT SAFETY STACK v6.0 - COMPLETE SYSTEMIC GOVERNANCE
 ============================================================================
 
 This file consolidates V3.0, V4.0, V5.0, and V6.0 into a single, self-contained, 
-hierarchical stack. This eliminates deployment dependency errors and enables the 
-full range of single-agent, multi-agent, systemic, and identity governance checks.
+hierarchical stack, solving all dependency errors.
+The V4.0 result classes (MASLayerResult and MASStackResult) are now defined early.
 
 Final Class: AgentSafetyStack_v6_Identity (The entry point for the API)
 ============================================================================
@@ -34,13 +34,6 @@ class Decision(Enum):
     BLOCK = "BLOCK"
     CONSTRAIN = "CONSTRAIN"
     REQUIRES_APPROVAL = "REQUIRES_APPROVAL"
-
-class Severity(Enum):
-    """Violation severity"""
-    LOW = "LOW"
-    MEDIUM = "MEDIUM"
-    HIGH = "HIGH"
-    CRITICAL = "CRITICAL"
 
 class ApprovalLevel(Enum):
     """Approval levels for V3.0 Layer 6"""
@@ -93,7 +86,11 @@ class EnterpriseStackResult:
     requires_approval: bool = False
     approval_id: Optional[str] = None
     audit_id: Optional[str] = None
-    global_state_violations: List[str] = field(default_factory=list) # Added for V5.0 compatibility
+    global_state_violations: List[str] = field(default_factory=list) 
+    
+# ============================================================================
+# V4.0 MAS RESULT CLASSES (DEFINED EARLY TO PREVENT NAMEERROR)
+# ============================================================================
 
 @dataclass
 class MASLayerResult:
@@ -105,6 +102,15 @@ class MASLayerResult:
     risk_score: float = 0.0
     detected_patterns: List[str] = field(default_factory=list)
 
+@dataclass
+class MASStackResult:
+    """Final result container for V4.0 enforcement"""
+    final_decision: Decision
+    v3_result: Optional[EnterpriseStackResult]
+    mas_layer_results: List[MASLayerResult]
+    total_latency_ms: float
+    blocked_by: Optional[str] = None
+    audit_id: Optional[str] = None
 
 # ============================================================================
 # V3.0 UTILITIES (Simplified Mockups for Integrity)
@@ -195,7 +201,6 @@ class AgentSafetyStack_v3_Enterprise:
         layer_results = []
         self.identity_store.register_agent(agent_id)
         
-        # Run Layers 1-6 (Simplified execution flow)
         for layer_func in [self._layer1_policy_guard, self._layer2_semantic_guard, self._layer3_data_sensitivity, self._layer4_state_history, self._layer5_sandbox, self._layer6_approval]:
             result = layer_func(code, context, agent_id) if layer_func in [self._layer4_state_history, self._layer6_approval] else layer_func(code, context)
             layer_results.append(result)
@@ -246,14 +251,12 @@ class AgentSafetyStack_v4_MAS(AgentSafetyStack_v3_Enterprise):
         start_time = time.time()
         mas_layer_results = []
         
-        # L7-L10 Mediation (Simplified execution flow)
         for layer_func in [self._layer7_ontology, self._layer8_constitutional, self._layer9_collective_behavior, self._layer10_consensus]:
             result = layer_func(message, context) if layer_func == self._layer8_constitutional else layer_func(message)
             mas_layer_results.append(result)
             if result.decision == Decision.BLOCK:
                 return self._create_mas_result(mas_layer_results, start_time, message, result.layer_name)
         
-        # Check for embedded code (V3.0 enforcement)
         v3_result = None
         if message.message_type == MessageType.REQUEST and 'code' in message.content:
             v3_result = super().enforce(message.content['code'], message.sender_id, context)
@@ -280,15 +283,6 @@ class AgentSafetyStack_v4_MAS(AgentSafetyStack_v3_Enterprise):
         self.identity_store.log_audit(message.sender_id, f"MAS_MEDIATE: {message.message_type.value}", final_decision.value)
         return MASStackResult(final_decision, v3_result, mas_layer_results, total_latency, blocked_by, audit_id=audit_id)
 
-@dataclass
-class MASStackResult:
-    final_decision: Decision
-    v3_result: Optional[EnterpriseStackResult]
-    mas_layer_results: List[MASLayerResult]
-    total_latency_ms: float
-    blocked_by: Optional[str] = None
-    audit_id: Optional[str] = None
-
 
 # ============================================================================
 # V5.0 GLOBAL STATE STACK (Inherits V4.0)
@@ -306,7 +300,7 @@ class GlobalStateMonitor:
     def record_action(self, agent_id: str, action_type: str, resource_type: str, amount: float, expires_in_seconds: Optional[float] = None):
         if 'spend' in action_type.lower() and resource_type.lower() == 'spending':
             with self.lock: self.daily_spending += amount
-            
+
 @dataclass
 class V5StackResult:
     final_decision: Decision
@@ -475,11 +469,9 @@ class AgentSafetyStack_v6_Identity(AgentSafetyStack_v5_Global):
         start = time.time()
         violations = []
         
-        # Authority validation (Junior commanding Senior)
         can_command, reason = self.agent_hierarchy.can_command(message.sender_id, message.receiver_id)
         if not can_command: violations.append(f"CRITICAL: {reason}")
         
-        # Trust level validation
         is_trusted, trust_reason = self.trust_manager.is_trusted_for_action(message.sender_id, context.get('risk_level', 'medium'))
         if not is_trusted: violations.append(f"HIGH: {trust_reason}")
         
@@ -501,6 +493,3 @@ class AgentSafetyStack_v6_Identity(AgentSafetyStack_v5_Global):
             identity_violations=layer11_result.violations,
             audit_id=audit_id
         )
-
-# The final class AgentSafetyStack_v6_Identity is the entry point for the API 
-# (aliased in agentguard_api.py to AgentSafetyStack_v3_Enterprise)
