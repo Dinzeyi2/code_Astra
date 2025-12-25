@@ -911,6 +911,38 @@ def list_customer_keys():
     
     return jsonify({'keys': keys})
 
+@app.route('/v1/execute', methods=['POST'])
+@require_customer_auth
+def execute_in_docker():
+    """Run Python code in an isolated Docker container."""
+    import subprocess, tempfile, uuid, os
+    data = request.json
+    code, timeout_ms = data.get('code', ''), data.get('timeout', 30000)
+    
+    # Safety Check first
+    safety = safety_stack.enforce(code, g.get('agent_id', 'exec-agent'))
+    if safety.final_decision.value != 'ALLOW':
+        return jsonify({"stdout": "", "stderr": f"Safety Block: {safety.blocked_by}", "exitCode": 1}), 403
+
+    # Execution logic
+    with tempfile.NamedTemporaryFile(suffix=".py", mode='w', delete=False) as tmp:
+        tmp.write(code)
+        tmp_path = tmp.name
+
+    container_name = f"exec_{uuid.uuid4().hex[:8]}"
+    cmd = ["docker", "run", "--rm", "--name", container_name, "--network", "none", "-v", f"{tmp_path}:/app/s.py:ro", "python:3.11-slim", "python", "/app/s.py"]
+
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=(timeout_ms/1000))
+        res = {"stdout": proc.stdout, "stderr": proc.stderr, "exitCode": proc.returncode}
+    except subprocess.TimeoutExpired:
+        subprocess.run(["docker", "kill", container_name])
+        res = {"stdout": "", "stderr": "Timeout", "exitCode": 124}
+    finally:
+        if os.path.exists(tmp_path): os.remove(tmp_path)
+        
+    return jsonify(res)
+
 
 # ============================================================================
 # MAIN
